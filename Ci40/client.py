@@ -14,14 +14,11 @@ seconds = 3
 macs = ["B0:91:22:F6:D5:03","54:6C:0E:52:F9:8F"]
 programName = "gatttool"
 error = 0
-mqttCommand = ""
 airIsOn = 0
 limit = 15
 
-
 sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) # UDP
 sock.bind((UDP_IP_LOCALHOST,UDP_IP_CLIENT_PORT))
-
 
 while True:
 	try:
@@ -58,7 +55,8 @@ while True:
 
 		if error == 0:
 
-			os.system(mqttCommand)
+			os.system('mosquitto_pub -d -h "demo.thingsboard.io" -t "v1/devices/me/telemetry" -u "tyi178C9h6rhjT4YotCW" -m "{"temperature":'+str(temp1)+'}"') #Sensor 1
+			os.system('mosquitto_pub -d -h "demo.thingsboard.io" -t "v1/devices/me/telemetry" -u "QZNPiTFGCVaYzt8c01yL" -m "{"temperature":'+str(temp2)+'}"') #Sensor 2
 
 			if temperatures[0] < limit or temperatures[1] < limit:
 				if airIsOn == 0:
