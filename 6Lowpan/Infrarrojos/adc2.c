@@ -1,0 +1,135 @@
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <letmecreate/click/accel.h>
+#include <letmecreate/click/common.h>
+#include <letmecreate/core/i2c.h>
+#include <letmecreate/core/spi.h>
+
+
+/* I2C ADXL345 addresses */
+#define ADXL345_ADDRESS_0           (0x53)
+#define ADXL345_ADDRESS_1           (0x1D)
+
+/* Control registers */
+#define BW_RATE_REG         (0x2C)
+#define POWER_CTRL_REG      (0x2D)
+#define DATA_FORMAT_REG     (0x31)
+#define FIFO_CTRL_REG       (0x38)
+
+/* Control values for */
+#define DATA_RATE           (0x0F)  /* 3.2kHz */
+#define MEASURE_EN          (0x08)
+#define SLEEP_EN            (0x04)
+#define WAKEUP_DATA_RATE    (0x03)  /* 8 readings/sec in sleep mode */
+#define FULL_RES_EN         (0x08)
+#define RANGE               (0x03)  /* max range +- 16g */
+
+/* Output registers */
+#define DATAX0_REG          (0x32)
+#define DATAX1_REG          (0x33)
+#define DATAY0_REG          (0x34)
+#define DATAY1_REG          (0x35)
+#define DATAZ0_REG          (0x36)
+#define DATAZ1_REG          (0x37)
+
+
+/* SPI specific */
+#define SPI_READ_BIT            (0x80)
+#define SPI_MULTIPLE_BYTE_BIT   (0x40)
+
+#define G_PER_LSB           (0.004f)   /* 4mg/LSB */
+
+static bool use_spi = true;
+static uint16_t slave_address = ADXL345_ADDRESS_0;
+
+static int write_register(uint8_t reg, uint8_t value)
+{
+    if (use_spi)
+        return spi_write_register(reg, value);
+    else
+        return i2c_write_register(slave_address, reg, value);
+}
+
+void accel_click_use_spi(void)
+{
+    use_spi = true;
+}
+
+void accel_click_use_i2c(uint8_t add_bit)
+{
+    use_spi = false;
+    if (add_bit)
+        slave_address = ADXL345_ADDRESS_1;
+    else
+        slave_address = ADXL345_ADDRESS_0;
+}
+
+int adc_enable(void)
+{
+    if (write_register(POWER_CTRL_REG, MEASURE_EN | WAKEUP_DATA_RATE) < 0) {
+        fprintf(stderr, "accel: Failed to enable device.\n");
+        return -1;
+    }
+
+    if (write_register(FIFO_CTRL_REG, 0) < 0) {     /* bypass FIFO */
+        fprintf(stderr, "accel: Failed to set fifo settings.\n");
+        return -1;
+    }
+
+    if (write_register(BW_RATE_REG, DATA_RATE) < 0) {
+        fprintf(stderr, "accel: Failed to set data rate.\n");
+        return -1;
+    }
+
+    if (write_register(DATA_FORMAT_REG, FULL_RES_EN | RANGE) < 0) {
+        fprintf(stderr, "accel: Failed to set data format.\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int adc_get_measure(float *value)
+{
+    uint8_t rx_buffer[7];
+    int16_t val;
+    int16_t val2;
+
+    if (value == NULL) {
+        fprintf(stderr, "accel: Cannot store acceleration using null pointers.\n");
+        return -1;
+    }
+
+    if (use_spi) {
+        uint8_t tx_buffer[7] = {0x18};
+        if (spi_transfer(tx_buffer, rx_buffer, sizeof(tx_buffer)) < 0) {
+            fprintf(stderr, "adc: Failed to get measure from device.\n");
+            return -1;
+        }
+    } else {
+        if (i2c_write_byte(slave_address, DATAX0_REG) < 0
+        ||  i2c_read(slave_address, &rx_buffer[1], 6) < 0) {
+            fprintf(stderr, "accel: Failed to get measure from device.\n");
+            return -1;
+        }
+    } 
+
+    memcpy(&val, &rx_buffer[1],2);
+    memcpy(&val2, &rx_buffer[2],8);
+    
+    *value = (float)((rx_buffer[1] & 0x3)<<8 | rx_buffer[2]);
+    *value = *value * G_PER_LSB;
+    //*value = (float)val;
+    return 0;
+}
+
+int adc_disable(void)
+{
+    if (write_register(POWER_CTRL_REG, SLEEP_EN) < 0) {
+        fprintf(stderr, "accel: Failed to shutdown device.\n");
+        return -1;
+    }
+
+    return 0;
+}
