@@ -1,0 +1,113 @@
+{
+  "ruleChain": {
+    "additionalInfo": null,
+    "name": "Crear alarma",
+    "firstRuleNodeId": null,
+    "root": false,
+    "debugMode": false,
+    "configuration": null
+  },
+  "metadata": {
+    "firstNodeIndex": 0,
+    "nodes": [
+      {
+        "additionalInfo": {
+          "layoutX": 323,
+          "layoutY": 140
+        },
+        "type": "org.thingsboard.rule.engine.filter.TbJsFilterNode",
+        "name": "Temperatura",
+        "debugMode": false,
+        "configuration": {
+          "jsScript": "return msg.temperature > 30;"
+        }
+      },
+      {
+        "additionalInfo": {
+          "layoutX": 325,
+          "layoutY": 355
+        },
+        "type": "org.thingsboard.rule.engine.action.TbCreateAlarmNode",
+        "name": "Alarma",
+        "debugMode": false,
+        "configuration": {
+          "alarmType": "Temperatura critica",
+          "alarmDetailsBuildJs": "var details = {};\ndetails.temperature = msg.temperature;\n\nif (metadata.prevAlarmDetails) {\n    var prevDetails = JSON.parse(metadata.prevAlarmDetails);\n    details.count = prevDetails.count + 1;\n} else {\n    details.count = 1;\n}\n\nreturn details;",
+          "severity": "CRITICAL",
+          "propagate": true
+        }
+      },
+      {
+        "additionalInfo": {
+          "layoutX": 504,
+          "layoutY": 228
+        },
+        "type": "org.thingsboard.rule.engine.mail.TbMsgToEmailNode",
+        "name": "Email a yandex",
+        "debugMode": false,
+        "configuration": {
+          "fromTemplate": "luis.martindlrubia@yandex.com",
+          "toTemplate": "juanbare@ucm.es",
+          "ccTemplate": null,
+          "bccTemplate": null,
+          "subjectTemplate": "Dispositivo ${deviceType} temperatura Alta",
+          "bodyTemplate": "El dispositivo ${deviceName} ha registrado una temperatura de ${temperature} ºC."
+        }
+      },
+      {
+        "additionalInfo": {
+          "layoutX": 786,
+          "layoutY": 342
+        },
+        "type": "org.thingsboard.rule.engine.mail.TbSendEmailNode",
+        "name": "Envio mail",
+        "debugMode": false,
+        "configuration": {
+          "useSystemSmtpSettings": false,
+          "smtpHost": "smtp.yandex.com",
+          "smtpPort": 465,
+          "username": "luis.martindlrubia@yandex.com",
+          "password": "lu20596",
+          "smtpProtocol": "smtps",
+          "timeout": 10000,
+          "enableTls": false
+        }
+      },
+      {
+        "additionalInfo": {
+          "layoutX": 49,
+          "layoutY": 351
+        },
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "add email",
+        "debugMode": false,
+        "configuration": {
+          "jsScript": "metadata.temperature = msg.temperature;\nreturn {msg: msg, metadata: metadata, msgType: msgType};"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromIndex": 0,
+        "toIndex": 4,
+        "type": "True"
+      },
+      {
+        "fromIndex": 1,
+        "toIndex": 2,
+        "type": "Created"
+      },
+      {
+        "fromIndex": 2,
+        "toIndex": 3,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 4,
+        "toIndex": 1,
+        "type": "Success"
+      }
+    ],
+    "ruleChainConnections": null
+  }
+}
