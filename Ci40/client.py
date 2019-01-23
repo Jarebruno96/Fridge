@@ -9,13 +9,13 @@ import shlex
 
 def getTemperatureData():
 
-	UDP_IP = 'fe80::28e9:3285:421c:bc82' # = 0.0.0.0 u IPv4
+	UDP_IP = 'fe80::28e9:3285:421c:bc82'
 	UDP_PORT = 5005
 	UDP_IP_LOCALHOST = "::1"
 	UDP_IP_CLIENT_PORT = 5006
 	SCALE_LSB = 0.03125
-	#macs = ["B0:91:22:F6:D5:03","54:6C:0E:52:F9:8F"]
-	macs = ["54:6C:0E:52:F9:8F","54:6C:0E:52:F9:8F"]
+	macs = ["B0:91:22:F6:D5:03","54:6C:0E:52:F9:8F"]
+	#macs = ["54:6C:0E:52:F9:8F","54:6C:0E:52:F9:8F"]
 	programName = "gatttool"
 	error = 0
 	airIsOn = 0
@@ -59,13 +59,15 @@ def getTemperatureData():
 				os.system('mosquitto_pub -d -h "demo.thingsboard.io" -t "v1/devices/me/telemetry" -u "tyi178C9h6rhjT4YotCW" -m "{"temperature":'+str(temperatures[0])+'}"') #Sensor 1
 				os.system('mosquitto_pub -d -h "demo.thingsboard.io" -t "v1/devices/me/telemetry" -u "QZNPiTFGCVaYzt8c01yL" -m "{"temperature":'+str(temperatures[1])+'}"') #Sensor 2
 
-				if temperatures[0] < temperatureLimit or temperatures[1] < temperatureLimit:
+				if temperatures[0] > temperatureLimit or temperatures[1] > temperatureLimit:
 					if airIsOn == 0:
+						print("Enciende Aire")
 						sock.sendto(b"EA",(UDP_IP,UDP_PORT))
 						airIsOn = 1
 
-				if temperatures[0] > temperatureLimit and temperatures[1] > temperatureLimit:
+				if temperatures[0] < temperatureLimit and temperatures[1] < temperatureLimit:
 					if airIsOn == 1:
+						print("Apaga Aire")
 						sock.sendto(b"AA", (UDP_IP, UDP_PORT))
 						airIsOn = 0
 

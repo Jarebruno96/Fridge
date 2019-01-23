@@ -11,10 +11,10 @@
 #include <letmecreate/core/spi.h>
 #include <math.h>
 
-#define SERVER_IP_ADDR "fe80::19:f5ff:fe89:1fac"
+#define SERVER_IP_ADDR "fe80:0000:0000:0000:28e9:3285:421c:bc82"
 
-#define SERVER_PORT 3000
-#define CLIENT_PORT 3001
+#define SERVER_PORT 5005
+#define CLIENT_PORT 5006
 
 #define BUFFER_SIZE 64
 
@@ -57,9 +57,17 @@ PROCESS_THREAD(main_process, ev, data)
 
 
       sprintf(buffer,"%i.%02i , %f, %f ", major, minor, value, dist);
-      udp_packet_send(conn, buffer, strlen(buffer));
-      PROCESS_WAIT_UDP_SENT();
 
+      if(major>1){
+        sprintf(buffer,"EL");
+        udp_packet_send(conn, buffer, strlen(buffer));
+        PROCESS_WAIT_UDP_SENT();
+      }
+      else{
+        sprintf(buffer,"AL");
+        udp_packet_send(conn, buffer, strlen(buffer));
+        PROCESS_WAIT_UDP_SENT();
+      }
 
       static struct etimer timer;
       etimer_set(&timer, 2 * CLOCK_SECOND);

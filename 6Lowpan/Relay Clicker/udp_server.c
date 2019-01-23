@@ -12,8 +12,8 @@
 
 #include "letmecreate/core/debug.h"
 
-#define SERVER_PORT 3000
-#define CLIENT_PORT 3001
+#define SERVER_PORT 5005
+#define CLIENT_PORT 5006
 #define SERVER_IP_ADDR "fe80:0000:0000:0000:28e9:3285:421c:bc82"
 #define BUFFER_SIZE 4096
 
@@ -46,8 +46,8 @@ PROCESS_THREAD(main_process, ev, data)
         // Bind a new connection, needs to be called on both sides
         conn = udp_new_connection(SERVER_PORT, CLIENT_PORT, NULL);
 
-        //relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_1, 0);
-        //relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_2, 0);
+        relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_1, 0);
+        relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_2, 0);
 
         while(1)
         {
@@ -57,15 +57,13 @@ PROCESS_THREAD(main_process, ev, data)
             length = udp_packet_receive(network_data, BUFFER_SIZE, &metadata);
 
             if(strcmp(network_data,"EL")){
-                relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_1, 1);
-            }else if(strcmp(network_data,"AL")){
-                relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_1, 0);
-            }else if(strcmp(network_data,"EA")){
                 relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_2, 1);
-            }else if(strcmp(network_data,"b'AA'")){
+            }else if(strcmp(network_data,"AL")){
                 relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_2, 0);
-            } else{
-                leds_toggle(LED1);
+            }else if(strcmp(network_data,"EA")){
+                relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_1, 1);
+            }else if(strcmp(network_data,"AA")){
+                relay2_click_set_relay_state(MIKROBUS_1, RELAY2_CLICK_RELAY_1, 0);
             }
 
 
